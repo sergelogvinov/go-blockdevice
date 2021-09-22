@@ -166,6 +166,11 @@ func probe(devpath string) (devpaths []string) {
 	// has partitions.
 	pt, err := bd.PartitionTable()
 	if err != nil {
+		//nolint: errcheck
+		if sb, _ := filesystem.Probe(devpath); sb != nil {
+			devpaths = append(devpaths, devpath)
+		}
+
 		return devpaths
 	}
 
