@@ -89,8 +89,8 @@ func WithSingleResult() SelectOption {
 	}
 }
 
-// All probes a block device's file system for the given label.
-func All(options ...SelectOption) (all []*ProbedBlockDevice, err error) {
+// all probes a block device's file system for the given label.
+func all(mode int, options ...SelectOption) (all []*ProbedBlockDevice, err error) {
 	var infos []os.FileInfo
 
 	if infos, err = ioutil.ReadDir("/sys/block"); err != nil {
@@ -100,7 +100,7 @@ func All(options ...SelectOption) (all []*ProbedBlockDevice, err error) {
 	for _, info := range infos {
 		devpath := "/dev/" + info.Name()
 
-		probed := probePartitions(devpath)
+		probed := probePartitions(devpath, blockdevice.WithMode(mode))
 
 		for _, dev := range probed {
 			add := true
@@ -190,7 +190,7 @@ func probe(devpath string) (devpaths []string) {
 // GetDevWithPartitionName probes all known block device's partition
 // table for a parition with the specified name.
 func GetDevWithPartitionName(name string) (bd *ProbedBlockDevice, err error) {
-	probed, err := All(WithPartitionLabel(name), WithSingleResult())
+	probed, err := all(blockdevice.DefaultMode, WithPartitionLabel(name), WithSingleResult())
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ func GetDevWithPartitionName(name string) (bd *ProbedBlockDevice, err error) {
 func GetDevWithFileSystemLabel(value string) (probe *ProbedBlockDevice, err error) {
 	var probed []*ProbedBlockDevice
 
-	if probed, err = All(WithFileSystemLabel(value), WithSingleResult()); err != nil {
+	if probed, err = all(blockdevice.DefaultMode, WithFileSystemLabel(value), WithSingleResult()); err != nil {
 		return nil, err
 	}
 
@@ -216,6 +216,22 @@ func GetDevWithFileSystemLabel(value string) (probe *ProbedBlockDevice, err erro
 	}
 
 	return probed[0], nil
+}
+
+// GetDevPathWithFileSystemLabel probes all known block device's file systems for
+// the given label, returns path of device.
+func GetDevPathWithFileSystemLabel(value string) (path string, err error) {
+	var probed []*ProbedBlockDevice
+
+	if probed, err = all(blockdevice.ReadonlyMode, WithFileSystemLabel(value), WithSingleResult()); err != nil {
+		return "", err
+	}
+
+	if len(probed) == 0 {
+		return "", os.ErrNotExist
+	}
+
+	return probed[0].Path, nil
 }
 
 // GetPartitionWithName probes all known block device's partition
@@ -231,7 +247,7 @@ func GetPartitionWithName(name string) (part *gpt.Partition, err error) {
 	return device.GetPartition(name)
 }
 
-func probePartitions(devpath string) (probed []*ProbedBlockDevice) {
+func probePartitions(devpath string, opts ...blockdevice.Option) (probed []*ProbedBlockDevice) {
 	for _, path := range probe(devpath) {
 		var (
 			bd  *blockdevice.BlockDevice
@@ -239,7 +255,7 @@ func probePartitions(devpath string) (probed []*ProbedBlockDevice) {
 			err error
 		)
 
-		bd, err = blockdevice.Open(devpath)
+		bd, err = blockdevice.Open(devpath, opts...)
 		if err != nil {
 			continue
 		}
