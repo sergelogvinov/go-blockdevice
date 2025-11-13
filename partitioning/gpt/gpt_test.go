@@ -36,7 +36,7 @@ const (
 func sfdiskDump(t *testing.T, devPath string) string {
 	t.Helper()
 
-	cmd := exec.Command("sfdisk", "--dump", devPath)
+	cmd := exec.CommandContext(t.Context(), "sfdisk", "--dump", devPath)
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()
 	assert.NoError(t, err)
@@ -53,7 +53,7 @@ func sfdiskDump(t *testing.T, devPath string) string {
 func gdiskDump(t *testing.T, devPath string) string {
 	t.Helper()
 
-	cmd := exec.Command("gdisk", "-l", devPath)
+	cmd := exec.CommandContext(t.Context(), "gdisk", "-l", devPath)
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()
 	assert.NoError(t, err)
@@ -89,6 +89,7 @@ func assertAllocated(t *testing.T, expectedIndex int) func(_ int, _ gpt.Partitio
 	}
 }
 
+//nolint:maintidx
 func TestGPT(t *testing.T) {
 	if os.Geteuid() != 0 {
 		t.Skip("test requires root privileges")

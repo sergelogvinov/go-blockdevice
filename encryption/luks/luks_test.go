@@ -134,7 +134,7 @@ func testEncrypt(t *testing.T) {
 
 	mountPath := t.TempDir()
 
-	cmd := exec.Command("mkfs.vfat", "-F", "32", "-n", "config", encryptedPath)
+	cmd := exec.CommandContext(t.Context(), "mkfs.vfat", "-F", "32", "-n", "config", encryptedPath)
 	require.NoError(t, cmd.Run())
 
 	type SealedKey struct {

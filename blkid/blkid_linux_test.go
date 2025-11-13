@@ -47,7 +47,7 @@ const (
 func xfsSetup(t *testing.T, path string) {
 	t.Helper()
 
-	cmd := exec.Command("mkfs.xfs", "--unsupported", "-L", "somelabel", path)
+	cmd := exec.CommandContext(t.Context(), "mkfs.xfs", "--unsupported", "-L", "somelabel", path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -57,7 +57,7 @@ func xfsSetup(t *testing.T, path string) {
 func ext2Setup(t *testing.T, path string) {
 	t.Helper()
 
-	cmd := exec.Command("mkfs.ext2", "-L", "extlabel", path)
+	cmd := exec.CommandContext(t.Context(), "mkfs.ext2", "-L", "extlabel", path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -67,7 +67,7 @@ func ext2Setup(t *testing.T, path string) {
 func ext3Setup(t *testing.T, path string) {
 	t.Helper()
 
-	cmd := exec.Command("mkfs.ext3", "-L", "extlabel", path)
+	cmd := exec.CommandContext(t.Context(), "mkfs.ext3", "-L", "extlabel", path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -77,7 +77,7 @@ func ext3Setup(t *testing.T, path string) {
 func ext4Setup(t *testing.T, path string) {
 	t.Helper()
 
-	cmd := exec.Command("mkfs.ext4", "-L", "extlabel", path)
+	cmd := exec.CommandContext(t.Context(), "mkfs.ext4", "-L", "extlabel", path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -88,7 +88,7 @@ func vfatSetup(bits int) func(t *testing.T, path string) {
 	return func(t *testing.T, path string) {
 		t.Helper()
 
-		cmd := exec.Command("mkfs.vfat", "-F", strconv.Itoa(bits), "-n", "TALOS_V1", "-v", path)
+		cmd := exec.CommandContext(t.Context(), "mkfs.vfat", "-F", strconv.Itoa(bits), "-n", "TALOS_V1", "-v", path)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
@@ -99,7 +99,7 @@ func vfatSetup(bits int) func(t *testing.T, path string) {
 func luksSetup(t *testing.T, path string) {
 	t.Helper()
 
-	cmd := exec.Command("cryptsetup", "luksFormat", "--label", "cryptlabel", "--key-file", "/dev/urandom", "--keyfile-size", "32", path)
+	cmd := exec.CommandContext(t.Context(), "cryptsetup", "luksFormat", "--label", "cryptlabel", "--key-file", "/dev/urandom", "--keyfile-size", "32", path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -150,7 +150,7 @@ func isoSetup(useJoilet bool) func(t *testing.T, path string) {
 
 		args = append(args, contents)
 
-		cmd := exec.Command("mkisofs", args...)
+		cmd := exec.CommandContext(t.Context(), "mkisofs", args...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
@@ -161,7 +161,7 @@ func isoSetup(useJoilet bool) func(t *testing.T, path string) {
 func swapSetup(t *testing.T, path string) {
 	t.Helper()
 
-	cmd := exec.Command("mkswap", "--label", "swaplabel", "-p", "8192", path)
+	cmd := exec.CommandContext(t.Context(), "mkswap", "--label", "swaplabel", "-p", "8192", path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -171,7 +171,7 @@ func swapSetup(t *testing.T, path string) {
 func swapSetup2(t *testing.T, path string) {
 	t.Helper()
 
-	cmd := exec.Command("mkswap", "--label", "swapswap", "-p", "4096", path)
+	cmd := exec.CommandContext(t.Context(), "mkswap", "--label", "swapswap", "-p", "4096", path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -181,7 +181,7 @@ func swapSetup2(t *testing.T, path string) {
 func lvm2Setup(t *testing.T, path string) {
 	t.Helper()
 
-	cmd := exec.Command("pvcreate", "-v", path)
+	cmd := exec.CommandContext(t.Context(), "pvcreate", "-v", path)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -209,7 +209,7 @@ func squashfsSetup(t *testing.T, path string) {
 
 	require.NoError(t, f.Close())
 
-	cmd := exec.Command("mksquashfs", contents, path, "-all-root", "-noappend", "-no-progress", "-no-compression")
+	cmd := exec.CommandContext(t.Context(), "mksquashfs", contents, path, "-all-root", "-noappend", "-no-progress", "-no-compression")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -627,7 +627,7 @@ size=      204800, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=7F5FCD6C-A703
                    type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=0F06E81A-E78D-426B-A078-30A01AAB3FB7, name="EPHEMERAL"
 `)
 
-	cmd := exec.Command("sfdisk", path)
+	cmd := exec.CommandContext(t.Context(), "sfdisk", path)
 	cmd.Stdin = strings.NewReader(script)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -659,7 +659,7 @@ size=      204800, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, uuid=3C047FF8-E35C
 					type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=0F06E81A-E78D-426B-A078-30A01AAB3FB7, name="TEST2"
 	`)
 
-	cmd := exec.Command("sfdisk", rawImage)
+	cmd := exec.CommandContext(t.Context(), "sfdisk", rawImage)
 	cmd.Stdin = strings.NewReader(script)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -1040,7 +1040,7 @@ func setupNestedGPT(t *testing.T, path string) {
 
 	setupGPT(t, path)
 
-	require.NoError(t, exec.Command("partprobe", path).Run())
+	require.NoError(t, exec.CommandContext(t.Context(), "partprobe", path).Run())
 
 	vfatSetup(16)(t, path+"p1")
 	ext4Setup(t, path+"p3")

@@ -73,6 +73,9 @@ const (
 	XChaCha12String = "xchacha12,aes-adiantum-plain64"
 	// XChaCha20String string representation of xchacha20 cipher.
 	XChaCha20String = "xchacha20,aes-adiantum-plain64"
+)
+
+const (
 	// AESXTSPlain64Cipher represents aes-xts-plain64 encryption cipher.
 	AESXTSPlain64Cipher Cipher = iota
 	// XChaCha12Cipher represents xchacha12 encryption cipher.

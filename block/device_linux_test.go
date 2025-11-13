@@ -61,14 +61,14 @@ func TestDevice(t *testing.T) {
 					   type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=0F06E81A-E78D-426B-A078-30A01AAB3FB7, name="EPHEMERAL"
 	`)
 
-	cmd := exec.Command("sfdisk", devPath)
+	cmd := exec.CommandContext(t.Context(), "sfdisk", devPath)
 	cmd.Stdin = strings.NewReader(script)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	require.NoError(t, cmd.Run())
 
-	cmd = exec.Command("partprobe", devPath)
+	cmd = exec.CommandContext(t.Context(), "partprobe", devPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
