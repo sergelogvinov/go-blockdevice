@@ -487,7 +487,7 @@ func TestProbePathFilesystems(t *testing.T) {
 
 			expectedBlockSize:   []uint32{0x20000},
 			expectedFSBlockSize: []uint32{0x20000},
-			expectedFSSize:      0x100554,
+			expectedFSSize:      0x1005e8,
 			expectedSignatures: []blkid.SignatureRange{
 				{Offset: 0, Size: 4},
 			},

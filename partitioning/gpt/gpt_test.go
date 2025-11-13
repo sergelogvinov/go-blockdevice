@@ -157,6 +157,39 @@ func TestGPT(t *testing.T) {
 			expectedGdiskDump:  loadTestdata(t, "allocate.gdisk"),
 		},
 		{
+			name:     "allocate with small delete",
+			diskSize: 4 * GiB,
+			opts: []gpt.Option{
+				gpt.WithDiskGUID(uuid.MustParse("B6D003E5-7D1D-45E3-9F4B-4A2430B46D4A")),
+			},
+			allocator: func(t *testing.T, table *gpt.Table) {
+				t.Helper()
+
+				assertAllocated(t, 1)(table.AllocatePartition(1*GiB, "1G", partType1,
+					gpt.WithUniqueGUID(uuid.MustParse("DA66737E-1ED4-4DDF-B98C-70CEBFE3ADA0")),
+				))
+				assertAllocated(t, 2)(table.AllocatePartition(100*MiB, "100M", partType1,
+					gpt.WithUniqueGUID(uuid.MustParse("3D0FE86B-7791-4659-B564-FC49A542866D")),
+					gpt.WithLegacyBIOSBootableAttribute(true),
+				))
+				assertAllocated(t, 3)(table.AllocatePartition(
+					table.LargestContiguousAllocatable(), "2.5G", partType2,
+					gpt.WithUniqueGUID(uuid.MustParse("EE1A711E-DE12-4D9F-98FF-672F7AD638F8")),
+				))
+
+				require.NoError(t, table.DeletePartition(1))
+
+				assert.EqualValues(t, 100*MiB, table.LargestContiguousAllocatable())
+
+				assertAllocated(t, 2)(table.AllocatePartition(100*MiB, "100M", partType2,
+					gpt.WithUniqueGUID(uuid.MustParse("15E609C8-9775-4E86-AF59-8A87E7C03FAB")),
+				))
+			},
+
+			expectedSfdiskDump: loadTestdata(t, "smalldelete.sfdisk"),
+			expectedGdiskDump:  loadTestdata(t, "smalldelete.gdisk"),
+		},
+		{
 			name:     "allocate with deletes",
 			diskSize: 6 * GiB,
 			opts: []gpt.Option{

@@ -338,17 +338,17 @@ func (t *Table) allocatableRanges() []allocatableRange {
 			highLBA = t.entries[partitionIdx].FirstLBA - 1
 		} else {
 			highLBA = t.lastUsableLBA
+			highLBA = highLBA/t.alignment*t.alignment - 1
 		}
 
 		lowLBA = (lowLBA + t.alignment - 1) / t.alignment * t.alignment
-		highLBA = highLBA / t.alignment * t.alignment
 
 		if highLBA > lowLBA {
 			ranges = append(ranges, allocatableRange{
 				lowLBA:       lowLBA,
 				highLBA:      highLBA,
 				partitionIdx: partitionIdx,
-				size:         (highLBA - lowLBA) * uint64(t.sectorSize),
+				size:         (highLBA - lowLBA + 1) * uint64(t.sectorSize),
 			})
 		}
 
