@@ -92,7 +92,7 @@ func (d *Device) GetSectorSize() uint {
 
 // IsCD returns true if the blockdevice is a CD-ROM device.
 func (d *Device) IsCD() bool {
-	const CDROM_GET_CAPABILITY = 0x5331 //nolint:revive,stylecheck
+	const CDROM_GET_CAPABILITY = 0x5331 //nolint:revive
 
 	if _, _, errno := unix.Syscall(unix.SYS_IOCTL, d.f.Fd(), uintptr(CDROM_GET_CAPABILITY), 0); errno != 0 {
 		return false
@@ -105,7 +105,7 @@ func (d *Device) IsCD() bool {
 
 // IsCDNoMedia returns true if the blockdevice is a CD-ROM device without media.
 func (d *Device) IsCDNoMedia() bool {
-	const CDROM_DRIVE_STATUS = 0x5326 //nolint:revive,stylecheck
+	const CDROM_DRIVE_STATUS = 0x5326 //nolint:revive
 
 	arg, _, errno := unix.Syscall(unix.SYS_IOCTL, d.f.Fd(), uintptr(CDROM_DRIVE_STATUS), 0)
 

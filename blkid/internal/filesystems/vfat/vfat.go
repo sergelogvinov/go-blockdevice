@@ -197,7 +197,7 @@ func isValid(msdosSB MSDOSSB, vfatSB VFATSB) (uint32, bool) {
 
 // FAT directory constants.
 //
-//nolint:revive,stylecheck
+//nolint:revive
 const (
 	FAT_ENTRY_FREE     = 0xe5
 	FAT_ATTR_LONG_NAME = 0x0f

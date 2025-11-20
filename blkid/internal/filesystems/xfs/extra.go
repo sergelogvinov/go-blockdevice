@@ -6,7 +6,7 @@ package xfs
 
 // XFS superblock structure constants.
 //
-//nolint:revive,stylecheck
+//nolint:revive
 const (
 	XFS_MIN_BLOCKSIZE_LOG  = 9  /* i.e. 512 bytes */
 	XFS_MAX_BLOCKSIZE_LOG  = 16 /* i.e. 65536 bytes */

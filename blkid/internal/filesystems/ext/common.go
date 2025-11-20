@@ -22,7 +22,7 @@ const sbOffset = 0x400
 
 // Various extfs constants.
 //
-//nolint:stylecheck,revive
+//nolint:revive
 const (
 	EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER = 0x0001
 	EXT2_FEATURE_RO_COMPAT_LARGE_FILE   = 0x0002
