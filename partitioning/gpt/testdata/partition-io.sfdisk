@@ -1,0 +1,9 @@
+label: gpt
+label-id: B6D003E5-7D1D-45E3-9F4B-4A2430B46D4A
+unit: sectors
+first-lba: 2048
+last-lba: 102366
+sector-size: 512
+
+start=        2048, size=        2048, type=EBD0A0A2-B9E5-4433-87C0-68B6B72699C7, uuid=DA66737E-1ED4-4DDF-B98C-70CEBFE3ADA0, name="VFAT"
+start=        4096, size=       65536, type=EBD0A0A2-B9E5-4433-87C0-68B6B72699C7, uuid=3D0FE86B-7791-4659-B564-FC49A542866D, name="EXT4"

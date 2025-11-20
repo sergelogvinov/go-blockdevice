@@ -2,7 +2,7 @@
 
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2025-11-13T17:57:11Z by kres e1d6dac.
+# Generated on 2025-11-22T06:57:20Z by kres e1d6dac.
 
 ARG TOOLCHAIN=scratch
 
@@ -19,7 +19,7 @@ RUN bunx markdownlint --ignore "CHANGELOG.md" --ignore "**/node_modules/**" --ig
 
 # base toolchain image
 FROM --platform=${BUILDPLATFORM} ${TOOLCHAIN} AS toolchain
-RUN apk --update --no-cache add bash build-base curl jq protoc protobuf-dev cdrkit cryptsetup dosfstools e2fsprogs gptfdisk lvm2 parted util-linux squashfs-tools xfsprogs
+RUN apk --update --no-cache add bash build-base curl jq protoc protobuf-dev cdrkit cryptsetup dosfstools e2fsprogs gptfdisk lvm2 parted util-linux squashfs-tools xfsprogs mtools
 
 # Creates the ZFS image
 FROM fedora:39 AS zfs-img-gen

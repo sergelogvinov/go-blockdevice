@@ -2,6 +2,6 @@
     "gopls": {
         "build.env": {
             "GOOS": "linux"
-        },
+        }
     }
 }

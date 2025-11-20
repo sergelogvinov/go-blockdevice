@@ -589,6 +589,42 @@ func (t *Table) Write() error {
 	return t.syncKernel()
 }
 
+// PartitionReader returns an io.Reader for reading data from a partition (0-indexed).
+func (t *Table) PartitionReader(partition int) (io.Reader, error) {
+	if partition < 0 || partition >= len(t.entries) {
+		return nil, fmt.Errorf("partition %d out of range", partition)
+	}
+
+	entry := t.entries[partition]
+	if entry == nil {
+		return nil, fmt.Errorf("partition %d is not allocated", partition)
+	}
+
+	offset := int64(entry.FirstLBA) * int64(t.sectorSize)
+	size := int64(entry.LastLBA-entry.FirstLBA+1) * int64(t.sectorSize)
+
+	return io.NewSectionReader(t.dev, offset, size), nil
+}
+
+// PartitionWriter returns an io.Writer for writing data to a partition (0-indexed).
+// It also returns the size of the partition in bytes.
+// The caller must ensure not to write more than the returned size.
+func (t *Table) PartitionWriter(partition int) (io.Writer, int, error) {
+	if partition < 0 || partition >= len(t.entries) {
+		return nil, 0, fmt.Errorf("partition %d out of range", partition)
+	}
+
+	entry := t.entries[partition]
+	if entry == nil {
+		return nil, 0, fmt.Errorf("partition %d is not allocated", partition)
+	}
+
+	offset := int64(entry.FirstLBA) * int64(t.sectorSize)
+	size := int64(entry.LastLBA-entry.FirstLBA+1) * int64(t.sectorSize)
+
+	return io.NewOffsetWriter(t.dev, offset), int(size), nil
+}
+
 func (t *Table) writePMBR() error {
 	protectiveMBR := make([]byte, 512)
 

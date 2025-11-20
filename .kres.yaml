@@ -21,6 +21,7 @@ spec:
         - util-linux
         - squashfs-tools
         - xfsprogs
+        - mtools
 ---
 kind: service.CodeCov
 spec:
