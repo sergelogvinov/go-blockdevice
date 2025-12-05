@@ -106,16 +106,6 @@ func (d *Device) WipeRange(start, length uint64) (string, error) {
 			return "blksecdiscard", nil
 		}
 
-		var zeroes int
-
-		if _, _, errno := unix.Syscall(unix.SYS_IOCTL, d.f.Fd(), unix.BLKDISCARDZEROES, uintptr(unsafe.Pointer(&zeroes))); errno == 0 && zeroes != 0 {
-			if _, _, errno = unix.Syscall(unix.SYS_IOCTL, d.f.Fd(), unix.BLKDISCARD, uintptr(unsafe.Pointer(&r[0]))); errno == 0 {
-				runtime.KeepAlive(d)
-
-				return "blkdiscardzeros", nil
-			}
-		}
-
 		if _, _, errno := unix.Syscall(unix.SYS_IOCTL, d.f.Fd(), unix.BLKZEROOUT, uintptr(unsafe.Pointer(&r[0]))); errno == 0 {
 			runtime.KeepAlive(d)
 
