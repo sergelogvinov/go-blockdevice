@@ -106,7 +106,7 @@ vdLoop:
 
 	if res.Label == nil {
 		lblBytes := pvd.Get_volume_id()
-		res.Label = pointer.To(strings.TrimRight(string(lblBytes), " "))
+		res.Label = pointer.To(strings.TrimRight(string(lblBytes), " \000"))
 	}
 
 	return res, nil

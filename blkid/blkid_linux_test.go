@@ -7,7 +7,6 @@
 package blkid_test
 
 import (
-	"bytes"
 	"crypto/rand"
 	_ "embed"
 	"encoding/binary"
@@ -106,22 +105,28 @@ func luksSetup(t *testing.T, path string) {
 	require.NoError(t, cmd.Run())
 }
 
-//go:embed testdata/zfs.img.zst
-var zfsImage []byte
+func fixedImageSetup(source string) func(t *testing.T, path string) {
+	return func(t *testing.T, path string) {
+		t.Helper()
 
-func zfsSetup(t *testing.T, path string) {
-	t.Helper()
+		in, err := os.Open(source)
+		require.NoError(t, err)
 
-	out, err := os.OpenFile(path, os.O_RDWR, 0)
-	require.NoError(t, err)
+		t.Cleanup(func() {
+			require.NoError(t, in.Close())
+		})
 
-	zr, err := zstd.NewReader(bytes.NewReader(zfsImage))
-	require.NoError(t, err)
+		out, err := os.OpenFile(path, os.O_RDWR, 0)
+		require.NoError(t, err)
 
-	_, err = io.Copy(out, zr)
-	require.NoError(t, err)
+		zr, err := zstd.NewReader(in)
+		require.NoError(t, err)
 
-	require.NoError(t, out.Close())
+		_, err = io.Copy(out, zr)
+		require.NoError(t, err)
+
+		require.NoError(t, out.Close())
+	}
 }
 
 func isoSetup(useJoilet bool) func(t *testing.T, path string) {
@@ -470,11 +475,28 @@ func TestProbePathFilesystems(t *testing.T) {
 			noLoop: true,
 
 			size:  0,
-			setup: zfsSetup,
+			setup: fixedImageSetup("testdata/zfs.img.zst"),
 
 			expectedName:       "zfs",
 			expectedLabelRegex: regexp.MustCompile(`^[0-9a-f]{16}$`),
 			expectedSignatures: zfsSignatures,
+		},
+		{
+			name:   "iso fixed image",
+			noLoop: true,
+
+			size:  0,
+			setup: fixedImageSetup("testdata/user-data-20000.iso.zst"),
+
+			expectedName:  "iso9660",
+			expectedLabel: "cidata",
+
+			expectedBlockSize:   []uint32{2048},
+			expectedFSBlockSize: []uint32{2048},
+			expectedFSSize:      0xd000,
+			expectedSignatures: []blkid.SignatureRange{
+				{Offset: 32769, Size: 5},
+			},
 		},
 		{
 			name:   "squashfs",
@@ -834,7 +856,7 @@ func TestProbePathGPT(t *testing.T) {
 			name: "GPT overwrites ZFS",
 
 			size:  2 * GiB,
-			setup: gptOverwritesFilesystem(zfsSetup),
+			setup: gptOverwritesFilesystem(fixedImageSetup("testdata/zfs.img.zst")),
 
 			expectedSize:  2 * GiB,
 			expectedUUID:  uuid.MustParse("DDDA0816-8B53-47BF-A813-9EBB1F73AAA2"),

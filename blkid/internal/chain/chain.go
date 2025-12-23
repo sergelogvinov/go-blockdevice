@@ -43,6 +43,11 @@ func (chain Chain) MagicMatches(buf []byte) []probe.MagicMatch {
 
 	for _, prober := range chain {
 		for _, magic := range prober.Magic() {
+			if magic.BlockSize() > len(buf) {
+				// skip, this magic cannot match
+				continue
+			}
+
 			if magic.Matches(buf) {
 				matches = append(matches, probe.MagicMatch{Magic: *magic, Prober: prober})
 

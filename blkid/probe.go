@@ -15,6 +15,9 @@ import (
 	"github.com/siderolabs/go-blockdevice/v2/blkid/internal/probe"
 )
 
+// MinProbeSize is the minimum size required for probing.
+const MinProbeSize = 16384
+
 type probeReader struct {
 	io.ReaderAt
 
@@ -119,8 +122,8 @@ func (i *Info) probe(f *os.File, chain chain.Chain, offset, length uint64, optio
 		return nil, probe.MagicMatch{}, fmt.Errorf("probing range is out of bounds: offset %d + len %d > size %d", offset, length, i.Size)
 	}
 
-	if length < uint64(chain.MaxMagicSize()) {
-		return nil, probe.MagicMatch{}, fmt.Errorf("probing range is too small: len %d < max magic size %d", length, chain.MaxMagicSize())
+	if length < MinProbeSize {
+		return nil, probe.MagicMatch{}, fmt.Errorf("probing range is too small: len %d < min probe size %d", length, MinProbeSize)
 	}
 
 	magicReadSize := max(uint(chain.MaxMagicSize()), i.IOSize)
