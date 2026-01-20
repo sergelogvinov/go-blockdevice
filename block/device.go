@@ -77,3 +77,18 @@ func OpenForWrite() Option {
 		o.Flag |= os.O_RDWR
 	}
 }
+
+// OpenAssertNotMounted opens in O_EXCL mode to assert the device is not mounted.
+//
+// From the open(2):
+//
+// In  general,  the  behavior  of  O_EXCL is undefined if it is used without O_CREAT.
+// There is one exception: on Linux 2.6 and later,
+// O_EXCL can be used without O_CREAT if pathname refers to a block device.
+// If the block  device  is  in  use  by  the  system  (e.g.,
+// mounted), open() fails with the error EBUSY.
+func OpenAssertNotMounted() Option {
+	return func(o *Options) {
+		o.Flag |= os.O_EXCL
+	}
+}
