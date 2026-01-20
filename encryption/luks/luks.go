@@ -408,7 +408,7 @@ func (l *LUKS) argonArgs() []string {
 }
 
 func (l *LUKS) perfArgs() []string {
-	res := []string{}
+	res := make([]string, 0, len(l.perfOptions))
 
 	for _, o := range l.perfOptions {
 		res = append(res, fmt.Sprintf("--perf-%s", o))

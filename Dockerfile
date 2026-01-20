@@ -2,7 +2,7 @@
 
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2025-12-23T14:45:35Z by kres 26be706.
+# Generated on 2026-01-20T11:08:18Z by kres 1ffefb6.
 
 ARG TOOLCHAIN=scratch
 
@@ -10,12 +10,12 @@ ARG TOOLCHAIN=scratch
 FROM scratch AS generate
 
 # runs markdownlint
-FROM docker.io/oven/bun:1.3.4-alpine AS lint-markdown
+FROM docker.io/oven/bun:1.3.6-alpine AS lint-markdown
 WORKDIR /src
-RUN bun i markdownlint-cli@0.47.0 sentences-per-line@0.3.0
+RUN bun i markdownlint-cli@0.47.0 sentences-per-line@0.5.0
 COPY .markdownlint.json .
 COPY ./CHANGELOG.md ./CHANGELOG.md
-RUN bunx markdownlint --ignore "CHANGELOG.md" --ignore "**/node_modules/**" --ignore '**/hack/chglog/**' --rules sentences-per-line .
+RUN bunx markdownlint --ignore "CHANGELOG.md" --ignore "**/node_modules/**" --ignore '**/hack/chglog/**' --rules markdownlint-sentences-per-line .
 
 # base toolchain image
 FROM --platform=${BUILDPLATFORM} ${TOOLCHAIN} AS toolchain
