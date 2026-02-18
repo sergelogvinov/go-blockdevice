@@ -138,7 +138,13 @@ func New(cipher Cipher, options ...Option) *LUKS {
 // Open runs luksOpen on a device and returns mapped device path.
 func (l *LUKS) Open(ctx context.Context, deviceName, mappedName string, key *encryption.Key) (string, error) {
 	args := slices.Concat(
-		[]string{"luksOpen", deviceName, mappedName, "--key-file=-"},
+		[]string{
+			"luksOpen",
+			deviceName,
+			mappedName,
+			"--key-file=-",
+			fmt.Sprintf("--keyfile-size=%d", len(key.Value)),
+		},
 		keyslotArgs(key),
 		l.perfArgs(),
 	)
@@ -175,7 +181,14 @@ func (l *LUKS) Encrypt(ctx context.Context, deviceName string, key *encryption.K
 	}
 
 	args := slices.Concat(
-		[]string{"luksFormat", "--type", "luks2", "--key-file=-", "-c", cipher, deviceName},
+		[]string{
+			"luksFormat",
+			"--type", "luks2",
+			"--key-file=-",
+			fmt.Sprintf("--keyfile-size=%d", len(key.Value)),
+			"-c", cipher,
+			deviceName,
+		},
 		l.argonArgs(),
 		keyslotArgs(key),
 		l.encryptionArgs(),
@@ -192,7 +205,12 @@ func (l *LUKS) Encrypt(ctx context.Context, deviceName string, key *encryption.K
 
 // Resize implements encryption.Provider.
 func (l *LUKS) Resize(ctx context.Context, devname string, key *encryption.Key) error {
-	args := []string{"resize", devname, "--key-file=-"}
+	args := []string{
+		"resize",
+		devname,
+		"--key-file=-",
+		fmt.Sprintf("--keyfile-size=%d", len(key.Value)),
+	}
 
 	_, err := l.runCommand(ctx, args, key.Value)
 
@@ -219,6 +237,8 @@ func (l *LUKS) AddKey(ctx context.Context, devname string, key, newKey *encrypti
 			devname,
 			"--key-file=-",
 			fmt.Sprintf("--keyfile-size=%d", keyfileLen),
+			"--new-keyfile=-",
+			fmt.Sprintf("--new-keyfile-size=%d", len(newKey.Value)),
 		},
 		l.argonArgs(),
 		l.encryptionArgs(),
@@ -230,38 +250,16 @@ func (l *LUKS) AddKey(ctx context.Context, devname string, key, newKey *encrypti
 	return err
 }
 
-// SetKey sets new key value at the LUKS encryption slot.
-func (l *LUKS) SetKey(ctx context.Context, devname string, oldKey, newKey *encryption.Key) error {
-	if oldKey.Slot != newKey.Slot {
-		return fmt.Errorf("old and new key slots must match")
-	}
-
-	var buffer bytes.Buffer
-
-	keyfileLen, _ := buffer.Write(oldKey.Value)
-	buffer.Write(newKey.Value)
-
-	args := slices.Concat(
-		[]string{
-			"luksChangeKey",
-			devname,
-			"--key-file=-",
-			fmt.Sprintf("--key-slot=%d", newKey.Slot),
-			fmt.Sprintf("--keyfile-size=%d", keyfileLen),
-		},
-		l.argonArgs(),
-		l.perfArgs(),
-	)
-
-	_, err := l.runCommand(ctx, args, buffer.Bytes())
-
-	return err
-}
-
 // CheckKey checks if the key is valid.
 func (l *LUKS) CheckKey(ctx context.Context, devname string, key *encryption.Key) (bool, error) {
 	args := slices.Concat(
-		[]string{"luksOpen", "--test-passphrase", devname, "--key-file=-"},
+		[]string{
+			"luksOpen",
+			"--test-passphrase",
+			devname,
+			"--key-file=-",
+			fmt.Sprintf("--keyfile-size=%d", len(key.Value)),
+		},
 		keyslotArgs(key),
 	)
 
@@ -279,7 +277,13 @@ func (l *LUKS) CheckKey(ctx context.Context, devname string, key *encryption.Key
 
 // RemoveKey removes a key at the specified LUKS encryption slot.
 func (l *LUKS) RemoveKey(ctx context.Context, devname string, slot int, key *encryption.Key) error {
-	_, err := l.runCommand(ctx, []string{"luksKillSlot", devname, strconv.Itoa(slot), "--key-file=-"}, key.Value)
+	_, err := l.runCommand(ctx, []string{
+		"luksKillSlot",
+		devname,
+		strconv.Itoa(slot),
+		"--key-file=-",
+		fmt.Sprintf("--keyfile-size=%d", len(key.Value)),
+	}, key.Value)
 	if err != nil {
 		return err
 	}

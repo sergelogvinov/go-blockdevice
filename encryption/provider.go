@@ -26,7 +26,6 @@ type Provider interface {
 	Open(ctx context.Context, devname, mappedName string, key *Key) (string, error)
 	Close(ctx context.Context, devname string) error
 	AddKey(ctx context.Context, devname string, key, newKey *Key) error
-	SetKey(ctx context.Context, devname string, key, newKey *Key) error
 	CheckKey(ctx context.Context, devname string, key *Key) (bool, error)
 	RemoveKey(ctx context.Context, devname string, slot int, key *Key) error
 	ReadKeyslots(deviceName string) (*Keyslots, error)

@@ -6,7 +6,9 @@ package luks_test
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
+	"io"
 	randv2 "math/rand/v2"
 	"os"
 	"os/exec"
@@ -31,7 +33,15 @@ const (
 	size = 1024 * 1024 * 512
 )
 
-func testEncrypt(t *testing.T) {
+func TestLUKSEncrypt(t *testing.T) {
+	if os.Getuid() != 0 {
+		t.Skip("can't run the test as non-root")
+	}
+
+	if hostname, _ := os.Hostname(); hostname == "buildkitsandbox" { //nolint:errcheck
+		t.Skip("test not supported under buildkit as partition devices are not propagated from /dev")
+	}
+
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 	t.Cleanup(cancel)
 
@@ -88,7 +98,7 @@ func testEncrypt(t *testing.T) {
 	var _ encryption.Provider = &luks.LUKS{}
 
 	key := encryption.NewKey(0, []byte("changeme"))
-	keyExtra := encryption.NewKey(1, []byte("helloworld"))
+	keyExtra := encryption.NewKey(1, []byte("hello\nworld"))
 
 	provider := luks.New(
 		luks.AESXTSPlain64Cipher,
@@ -122,7 +132,6 @@ func testEncrypt(t *testing.T) {
 	require.NoError(t, provider.Resize(ctx, encryptedPath, key))
 
 	require.NoError(t, provider.AddKey(ctx, path, key, keyExtra))
-	require.NoError(t, provider.SetKey(ctx, path, keyExtra, keyExtra))
 
 	valid, err := provider.CheckKey(ctx, path, keyExtra)
 	require.NoError(t, err)
@@ -214,16 +223,99 @@ func testEncrypt(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestLUKS(t *testing.T) {
+func TestLUKSKeyRotation(t *testing.T) {
 	if os.Getuid() != 0 {
 		t.Skip("can't run the test as non-root")
 	}
 
-	if hostname, _ := os.Hostname(); hostname == "buildkitsandbox" { //nolint:errcheck
-		t.Skip("test not supported under buildkit as partition devices are not propagated from /dev")
+	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
+	t.Cleanup(cancel)
+
+	tmpDir := t.TempDir()
+
+	rawImage := filepath.Join(tmpDir, "image.raw")
+
+	f, err := os.Create(rawImage)
+	require.NoError(t, err)
+
+	require.NoError(t, f.Truncate(int64(size)))
+	require.NoError(t, f.Close())
+
+	loDev := losetupAttachHelper(t, rawImage, false)
+
+	t.Cleanup(func() {
+		assert.NoError(t, loDev.Detach())
+	})
+
+	devPath := loDev.Path()
+	mappedName := filepath.Base(devPath) + "-encrypted"
+
+	t.Logf("unencrypted partition path %s", devPath)
+
+	keys := [][]byte{ //nolint:prealloc // this is a test
+		[]byte("topsecretlongsecretprettymuch"),
+		[]byte("keywith\nnewlines\nandstuff"),
+		[]byte("short"),
 	}
 
-	t.Run("Encrypt", testEncrypt)
+	randomKey := make([]byte, 64)
+
+	_, err = io.ReadFull(rand.Reader, randomKey)
+	require.NoError(t, err)
+
+	keys = append(keys, randomKey)
+
+	provider := luks.New(
+		luks.AESXTSPlain64Cipher,
+		luks.WithIterTime(time.Millisecond*100),
+		luks.WithPerfOptions(luks.PerfSameCPUCrypt),
+	)
+
+	oldKey := &encryption.Key{
+		Value: keys[0],
+		Slot:  0,
+	}
+
+	// encrypt with the first key
+	require.NoError(t, provider.Encrypt(ctx, devPath, oldKey))
+
+	encryptedPath, err := provider.Open(ctx, devPath, mappedName, oldKey)
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		assert.NoError(t, provider.Close(context.Background(), encryptedPath))
+	})
+
+	for _, newKeyValue := range keys[1:] {
+		t.Logf("rotating key to %q", newKeyValue)
+
+		newKey := &encryption.Key{
+			Value: newKeyValue,
+			Slot:  (oldKey.Slot + 1) % 2, // rotate between slot 0 and 1
+		}
+
+		// add new key
+		require.NoError(t, provider.AddKey(ctx, devPath, oldKey, newKey))
+
+		// both keys should be valid now
+		valid, err := provider.CheckKey(ctx, devPath, newKey)
+		require.NoError(t, err)
+		require.True(t, valid)
+
+		valid, err = provider.CheckKey(ctx, devPath, oldKey)
+		require.NoError(t, err)
+		require.True(t, valid)
+
+		// drop old key
+		require.NoError(t, provider.RemoveKey(ctx, devPath, oldKey.Slot, newKey))
+
+		// old key should be invalid now
+		valid, err = provider.CheckKey(ctx, devPath, oldKey)
+		require.NoError(t, err)
+		require.False(t, valid)
+
+		oldKey = newKey
+	}
 }
 
 func losetupAttachHelper(t *testing.T, rawImage string, readonly bool) losetup.Device {
