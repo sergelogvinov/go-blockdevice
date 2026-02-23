@@ -16,8 +16,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/siderolabs/gen v0.8.5 h1:xlWXTynnGD/epaj7uplvKvmAkBH+Fp51bLnw1JC0xME=
 github.com/siderolabs/gen v0.8.5/go.mod h1:CRrktDXQf3yDJI7xKv+cDYhBbKdfd/YE16OpgcHoT9E=
-github.com/siderolabs/go-cmd v0.1.3 h1:JrgZwqhJQeoec3QRON0LK+fv+0y7d0DyY7zsfkO6ciw=
-github.com/siderolabs/go-cmd v0.1.3/go.mod h1:bg7HY4mRNu4zKebAgUevSwuYNtcvPMJfuhLRkVKHZ0k=
+github.com/siderolabs/go-cmd v0.2.0 h1:fZ0jbQzZg4bFLmJzNEDZM/RlebZsfHOo2k+PCJ6g7y4=
+github.com/siderolabs/go-cmd v0.2.0/go.mod h1:YA/UEDh8Av84RlI4LfQw7HN9+vgxUrQw/Byef1dgptY=
 github.com/siderolabs/go-pointer v1.0.1 h1:f7Yi4IK1jptS8yrT9GEbwhmGcVxvPQgBUG/weH3V3DM=
 github.com/siderolabs/go-pointer v1.0.1/go.mod h1:C8Q/3pNHT4RE9e4rYR9PHeS6KPMlStRBgYrJQJNy/vA=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=

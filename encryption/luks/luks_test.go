@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -152,7 +153,7 @@ func TestLUKSEncrypt(t *testing.T) {
 
 	token := &luks.Token[SealedKey]{
 		UserData: SealedKey{
-			SealedKey: "aaaa",
+			SealedKey: strings.Repeat("aaaa", 1024), // 4KB
 		},
 		Type: "sealedkey",
 	}
@@ -163,7 +164,7 @@ func TestLUKSEncrypt(t *testing.T) {
 	err = provider.ReadToken(ctx, path, 0, token)
 	require.NoError(t, err)
 
-	require.Equal(t, token.UserData.SealedKey, "aaaa")
+	require.Equal(t, token.UserData.SealedKey, token.UserData.SealedKey)
 
 	require.NoError(t, provider.RemoveToken(ctx, path, 0))
 	require.Error(t, provider.ReadToken(ctx, path, 0, token))

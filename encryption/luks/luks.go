@@ -149,7 +149,7 @@ func (l *LUKS) Open(ctx context.Context, deviceName, mappedName string, key *enc
 		l.perfArgs(),
 	)
 
-	_, err := l.runCommand(ctx, args, key.Value)
+	_, err := l.runCommand(ctx, args, key.Value, false)
 	if err != nil {
 		return "", err
 	}
@@ -161,7 +161,7 @@ func (l *LUKS) Open(ctx context.Context, deviceName, mappedName string, key *enc
 func (l *LUKS) IsOpen(ctx context.Context, _, mappedName string) (bool, string, error) {
 	args := []string{"status", mappedName}
 
-	_, err := l.runCommand(ctx, args, nil)
+	_, err := l.runCommand(ctx, args, nil, false)
 	if err != nil {
 		if errors.Is(err, encryption.ErrDeviceNotReady) {
 			return false, "", nil
@@ -198,7 +198,7 @@ func (l *LUKS) Encrypt(ctx context.Context, deviceName string, key *encryption.K
 		args = append(args, fmt.Sprintf("--sector-size=%d", l.blockSize))
 	}
 
-	_, err = l.runCommand(ctx, args, key.Value)
+	_, err = l.runCommand(ctx, args, key.Value, false)
 
 	return err
 }
@@ -212,14 +212,14 @@ func (l *LUKS) Resize(ctx context.Context, devname string, key *encryption.Key) 
 		fmt.Sprintf("--keyfile-size=%d", len(key.Value)),
 	}
 
-	_, err := l.runCommand(ctx, args, key.Value)
+	_, err := l.runCommand(ctx, args, key.Value, false)
 
 	return err
 }
 
 // Close implements encryption.Provider.
 func (l *LUKS) Close(ctx context.Context, devname string) error {
-	_, err := l.runCommand(ctx, []string{"luksClose", devname}, nil)
+	_, err := l.runCommand(ctx, []string{"luksClose", devname}, nil, false)
 
 	return err
 }
@@ -245,7 +245,7 @@ func (l *LUKS) AddKey(ctx context.Context, devname string, key, newKey *encrypti
 		keyslotArgs(newKey),
 	)
 
-	_, err := l.runCommand(ctx, args, buffer.Bytes())
+	_, err := l.runCommand(ctx, args, buffer.Bytes(), false)
 
 	return err
 }
@@ -263,7 +263,7 @@ func (l *LUKS) CheckKey(ctx context.Context, devname string, key *encryption.Key
 		keyslotArgs(key),
 	)
 
-	_, err := l.runCommand(ctx, args, key.Value)
+	_, err := l.runCommand(ctx, args, key.Value, false)
 	if err != nil {
 		if err == encryption.ErrEncryptionKeyRejected { //nolint:errorlint
 			return false, nil
@@ -283,7 +283,7 @@ func (l *LUKS) RemoveKey(ctx context.Context, devname string, slot int, key *enc
 		strconv.Itoa(slot),
 		"--key-file=-",
 		fmt.Sprintf("--keyfile-size=%d", len(key.Value)),
-	}, key.Value)
+	}, key.Value, false)
 	if err != nil {
 		return err
 	}
@@ -337,14 +337,14 @@ func (l *LUKS) SetToken(ctx context.Context, devname string, slot int, token tok
 
 	id := strconv.Itoa(slot)
 
-	_, err = l.runCommand(ctx, []string{"token", "import", "-q", devname, "--token-id", id, "--json-file=-", "--token-replace"}, data)
+	_, err = l.runCommand(ctx, []string{"token", "import", "-q", devname, "--token-id", id, "--json-file=-", "--token-replace"}, data, false)
 
 	return err
 }
 
 // ReadToken reads arbitrary token from the luks metadata.
 func (l *LUKS) ReadToken(ctx context.Context, devname string, slot int, token token.Token) error {
-	stdout, err := l.runCommand(ctx, []string{"token", "export", "-q", devname, "--token-id", strconv.Itoa(slot), "--json-file=-"}, nil)
+	stdout, err := l.runCommand(ctx, []string{"token", "export", "-q", devname, "--token-id", strconv.Itoa(slot), "--json-file=-"}, nil, true)
 	if err != nil {
 		return err
 	}
@@ -354,7 +354,7 @@ func (l *LUKS) ReadToken(ctx context.Context, devname string, slot int, token to
 
 // RemoveToken removes token from the luks metadata.
 func (l *LUKS) RemoveToken(ctx context.Context, devname string, slot int) error {
-	_, err := l.runCommand(ctx, []string{"token", "remove", "--token-id", strconv.Itoa(slot), devname}, nil)
+	_, err := l.runCommand(ctx, []string{"token", "remove", "--token-id", strconv.Itoa(slot), devname}, nil, false)
 
 	return err
 }
@@ -362,10 +362,23 @@ func (l *LUKS) RemoveToken(ctx context.Context, devname string, slot int) error 
 var notFoundMatcher = regexp.MustCompile("(is not in use|Failed to get token)")
 
 // runCommand executes cryptsetup with arguments.
-func (l *LUKS) runCommand(ctx context.Context, args []string, stdin []byte) (string, error) {
-	stdout, err := cmd.RunContext(cmd.WithStdin(
+func (l *LUKS) runCommand(ctx context.Context, args []string, stdin []byte, captureStdout bool) (string, error) {
+	var opts []cmd.Option
+
+	if captureStdout {
+		opts = append(opts, cmd.WithFullStdoutCapture())
+	}
+
+	if stdin != nil {
+		opts = append(opts, cmd.WithStandardInput(bytes.NewReader(stdin)))
+	}
+
+	stdout, err := cmd.RunWithOptions(
 		ctx,
-		bytes.NewReader(stdin)), "cryptsetup", args...)
+		"cryptsetup",
+		args,
+		opts...,
+	)
 	if err != nil {
 		var exitError *cmd.ExitError
 		if errors.As(err, &exitError) {

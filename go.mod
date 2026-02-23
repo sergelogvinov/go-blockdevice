@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.18.3
 	github.com/siderolabs/gen v0.8.5
-	github.com/siderolabs/go-cmd v0.1.3
+	github.com/siderolabs/go-cmd v0.2.0
 	github.com/siderolabs/go-pointer v1.0.1
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.1
